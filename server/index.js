@@ -20,14 +20,11 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 // ── Global middleware ─────────────────────────────────────────────
-app.use(
-  cors({
-    origin: [
-      "https://blog-sync-frontnd.vercel.app",
-    ],
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: "https://blog-sync-frontnd.vercel.app", // Looked up from your earlier screenshot!
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"]
+}));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -72,10 +69,11 @@ mongoose
   });
 
 // ONLY run app.listen if we are NOT on Vercel
+// 1. Keep the local listener active without blocking production
 if (process.env.NODE_ENV !== "production") {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () =>
-    console.log(`🚀  Server running → http://localhost:${PORT}`)
+    console.log(`🚀 Server running → http://localhost:${PORT}`)
   );
 }
 
