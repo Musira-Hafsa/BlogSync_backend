@@ -23,7 +23,6 @@ app.use(passport.session());
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
       "https://blog-sync-frontnd.vercel.app",
     ],
     credentials: true,
