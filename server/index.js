@@ -23,7 +23,7 @@ app.use(passport.session());
 app.use(cors({
   origin: "https://blog-sync-frontnd.vercel.app", // Looked up from your earlier screenshot!
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"]
+ methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
