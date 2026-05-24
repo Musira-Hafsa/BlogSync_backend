@@ -36,10 +36,11 @@ const uploadAvatar = multer({ storage: avatarStorage, limits: { fileSize: 4 * 10
 // ── Routes ────────────────────────────────────────────────────────
 
 // POST /api/upload/cover  — upload blog cover image
+
 router.post(
   "/cover",
   protect,
-  uploadCover.single("image"),
+  uploadCover.single("cover"), 
   (req, res) => {
     if (!req.file)
       return res.status(400).json({ message: "No file received." });
@@ -52,10 +53,11 @@ router.post(
 );
 
 // POST /api/upload/avatar  — upload profile avatar
+
 router.post(
   "/avatar",
   protect,
-  uploadAvatar.single("image"),
+  uploadAvatar.single("avatar"), 
   (req, res) => {
     if (!req.file)
       return res.status(400).json({ message: "No file received." });
