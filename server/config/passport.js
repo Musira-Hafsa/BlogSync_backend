@@ -3,13 +3,16 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const GitHubStrategy = require("passport-github2").Strategy;
 const User = require("../models/User");
 
+
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL:
-        "http://localhost:5000/api/auth/google/callback",
+      // 🟩 Dynamically swaps the callback URL based on deployment environment
+      callbackURL: process.env.NODE_ENV === "production"
+        ? "https://blog-sync-backend-two.vercel.app/api/auth/google/callback"
+        : "http://localhost:5000/api/auth/google/callback",
     },
     async (_, __, profile, done) => {
       try {
@@ -35,13 +38,16 @@ passport.use(
   )
 );
 
+
 passport.use(
   new GitHubStrategy(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL:
-        "http://localhost:5000/api/auth/github/callback",
+      // 🟩 Dynamically swaps the callback URL based on deployment environment
+      callbackURL: process.env.NODE_ENV === "production"
+        ? "https://blog-sync-backend-two.vercel.app/api/auth/github/callback"
+        : "http://localhost:5000/api/auth/github/callback",
     },
     async (_, __, profile, done) => {
       try {
