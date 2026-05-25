@@ -64,30 +64,41 @@ app.use((err, req, res, next) => {
 });
 
 // ── Serverless-Safe MongoDB Connection ────────────────────────────
-let isConnected = false;
+let cachedDb = null;
+
 const connectDB = async () => {
-  if (isConnected) return;
+  // If we already have a connection to the pool, use it instantly
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+  
+  // If a connection is already in progress, wait for it
+  if (mongoose.connection.readyState === 2) {
+    return mongoose.connection;
+  }
+
   try {
-    const db = await mongoose.connect(process.env.MONGO_URI);
-    isConnected = db.connections[0].readyState === 1;
-    console.log("✅ MongoDB connected");
+    console.log("🔄 Initiating new MongoDB connection pool...");
+    const db = await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 3000, // ⏱️ Give up after 3 seconds so Vercel doesn't timeout the whole function
+    });
+    console.log("✅ MongoDB connected successfully");
+    return db;
   } catch (err) {
     console.error("❌ MongoDB connection failed:", err.message);
+    throw err; // Throw it so our middleware knows something went wrong
   }
 };
 
-// Middleware to ensure DB connection is alive before routing requests on Vercel
+// Middleware to ensure DB connection is alive
 app.use(async (req, res, next) => {
-  await connectDB();
-  next();
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Database connection failed. Please try again shortly.",
+      error: error.message 
+    });
+  }
 });
-
-// Local Development Server Listener
-if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () =>
-    console.log(`🚀 Server running → http://localhost:${PORT}`)
-  );
-}
-
-module.exports = app;
