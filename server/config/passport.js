@@ -3,16 +3,19 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const GitHubStrategy = require("passport-github2").Strategy;
 const User = require("../models/User");
 
-
+// ==========================================
+// GOOGLE STRATEGY
+// ==========================================
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      // 🟩 Dynamically swaps the callback URL based on deployment environment
+      // Dynamically swaps the callback URL based on deployment environment
       callbackURL: process.env.NODE_ENV === "production"
         ? "https://blog-sync-backend-two.vercel.app/api/auth/google/callback"
         : "http://localhost:5000/api/auth/google/callback",
+      proxy: true // CRITICAL: Allows Passport to trust Vercel's reverse proxy over HTTPS
     },
     async (_, __, profile, done) => {
       try {
@@ -38,16 +41,19 @@ passport.use(
   )
 );
 
-
+// ==========================================
+// GITHUB STRATEGY
+// ==========================================
 passport.use(
   new GitHubStrategy(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      // 🟩 Dynamically swaps the callback URL based on deployment environment
+      // Dynamically swaps the callback URL based on deployment environment
       callbackURL: process.env.NODE_ENV === "production"
         ? "https://blog-sync-backend-two.vercel.app/api/auth/github/callback"
         : "http://localhost:5000/api/auth/github/callback",
+      proxy: true // CRITICAL: Allows Passport to trust Vercel's reverse proxy over HTTPS
     },
     async (_, __, profile, done) => {
       try {
@@ -76,11 +82,20 @@ passport.use(
   )
 );
 
+// ==========================================
+// SESSION SERIALIZATION
+// ==========================================
 passport.serializeUser((user, done) =>
   done(null, user.id)
 );
 
 passport.deserializeUser(async (id, done) => {
-  const user = await User.findById(id);
-  done(null, user);
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
 });
+
+module.exports = passport;
