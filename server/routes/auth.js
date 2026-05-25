@@ -88,38 +88,25 @@ router.get(
   (req, res) => {
     const token = signToken(req.user._id);
 
-    res.redirect(
-      `http://localhost:5173/auth-success?token=${token}`
-    );
-  }
-);
-
-
-router.get(
-  "/google/callback",
-  passport.authenticate("google", {
-    session: false,
-    failureRedirect: "/auth",
-  }),
-  (req, res) => {
-    const token = signToken(req.user._id);
-
-    // 🟩 Dynamically choose the frontend address based on the environment
+    // Dynamically choose the frontend address based on the environment
+    // ⚠️ DOUBLE CHECK THE SPELLING OF YOUR DEPLOYED FRONTEND URL HERE
     const frontendURL = process.env.NODE_ENV === "production"
-      ? "https://blog-sync-frontnd.vercel.app"
+      ? "https://blog-sync-frontnd.vercel.app" 
       : "http://localhost:5173";
 
     res.redirect(`${frontendURL}/auth-success?token=${token}`);
   }
 );
 
+// ==========================================
+// GITHUB AUTH ROUTES
+// ==========================================
 router.get(
   "/github",
   passport.authenticate("github", {
     scope: ["user:email"],
   })
 );
-
 
 router.get(
   "/github/callback",
@@ -130,7 +117,8 @@ router.get(
   (req, res) => {
     const token = signToken(req.user._id);
 
-    // 🟩 Dynamically choose the frontend address based on the environment
+    // Dynamically choose the frontend address based on the environment
+    // ⚠️ DOUBLE CHECK THE SPELLING OF YOUR DEPLOYED FRONTEND URL HERE
     const frontendURL = process.env.NODE_ENV === "production"
       ? "https://blog-sync-frontnd.vercel.app"
       : "http://localhost:5173";
