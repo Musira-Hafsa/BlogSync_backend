@@ -7,8 +7,6 @@ const app = express();
 const session = require("express-session");
 const passport = require("passport");
 
-require("./config/passport");
-
 app.use(
   session({
     secret: process.env.JWT_SECRET,
@@ -19,14 +17,23 @@ app.use(
 
 app.use(passport.initialize());
 app.use(passport.session());
+
 // ── Global middleware ─────────────────────────────────────────────
 app.use(cors({
-  origin: "https://blog-sync-frontnd.vercel.app", // Looked up from your earlier screenshot!
+  origin: "https://blog-sync-frontnd.vercel.app", 
   credentials: true,
- methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// ── Root Route (Fixes the 404 on your live home URL) ──────────────
+app.get("/", (req, res) => {
+  res.json({ 
+    message: "BlogSync Backend API is running successfully!",
+    database: mongoose.connection.readyState === 1 ? "connected" : "connecting"
+  });
+});
 
 // ── API routes ────────────────────────────────────────────────────
 app.use("/api/auth",     require("./routes/auth"));
@@ -56,20 +63,26 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ message: err.message || "Internal server error." });
 });
 
-// ── Connect MongoDB then start ────────────────────────────────────
-// ── Connect MongoDB ────────────────────────────────────
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("✅  MongoDB connected");
-  })
-  .catch((err) => {
-    console.error("❌  MongoDB connection failed:", err.message);
-    // REMOVE process.exit(1); -> It kills Vercel's cloud container instantly!
-  });
+// ── Serverless-Safe MongoDB Connection ────────────────────────────
+let isConnected = false;
+const connectDB = async () => {
+  if (isConnected) return;
+  try {
+    const db = await mongoose.connect(process.env.MONGO_URI);
+    isConnected = db.connections[0].readyState === 1;
+    console.log("✅ MongoDB connected");
+  } catch (err) {
+    console.error("❌ MongoDB connection failed:", err.message);
+  }
+};
 
-// ONLY run app.listen if we are NOT on Vercel
-// 1. Keep the local listener active without blocking production
+// Middleware to ensure DB connection is alive before routing requests on Vercel
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
+
+// Local Development Server Listener
 if (process.env.NODE_ENV !== "production") {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () =>
@@ -77,5 +90,4 @@ if (process.env.NODE_ENV !== "production") {
   );
 }
 
-// Keep your export right here
 module.exports = app;
